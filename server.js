@@ -52,7 +52,7 @@ function Book(item) {
 }
 
 function searchFunction(req, res) {
-    console.log(req.body.search);
+    
     let q = '';
     if (req.body.search[1] === 'title') { q = `+intitle:${req.body.search[0]}` }
     if (req.body.search[1] === 'author') { q = `+inauthor:${req.body.search[0]}` }
