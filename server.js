@@ -24,6 +24,7 @@ function indexRender(req, res) {
 
 app.get('/', formRender);
 app.post('/searches', searchFunction);
+app.get('/*',handelError);
 
 function formRender(req, res) {
     res.render('pages/searches/new.ejs');
@@ -63,6 +64,9 @@ function searchFunction(req, res) {
     
     
 }
+function handelError(req,res){
+    res.render('pages/error');
+    };
 
 // server starting function
 app.listen(PORT, () => {
