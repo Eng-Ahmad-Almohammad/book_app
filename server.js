@@ -16,13 +16,13 @@ app.set('view engine', 'ejs');
 // Reqired KEYS
 const PORT = process.env.PORT;
 
-app.get('/hello', indexRender);
+app.get('/', indexRender);
 
 function indexRender(req, res) {
     res.render('pages/index');
 };
 
-app.get('/', formRender);
+app.get('/form', formRender);
 app.post('/searches', searchFunction);
 app.get('/*',handelError);
 
@@ -52,10 +52,10 @@ function Book(item) {
 }
 
 function searchFunction(req, res) {
-    
+    console.log(req.body.search);
     let q = '';
     if (req.body.search[1] === 'title') { q = `+intitle:${req.body.search[0]}` }
-    if (req.body.search[1] === 'auther') { q = `+inauthor:${req.body.search[0]}` }
+    if (req.body.search[1] === 'author') { q = `+inauthor:${req.body.search[0]}` }
 
     superagent.get(`https://www.googleapis.com/books/v1/volumes?q=${q}`)
     
