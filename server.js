@@ -20,6 +20,12 @@ app.get('/hello',indexRender);
 
 function indexRender(req,res){
     res.render('pages/index');
+};
+
+app.get('/',formRender);
+
+function formRender(req,res){
+    res.render('pages/searches/new.ejs');
 }
 // server starting function
 app.listen(PORT, () => {
