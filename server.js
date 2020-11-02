@@ -10,6 +10,10 @@ app.use(cors());
 const superagent = require('superagent');
 const pg = require('pg');
 
+const DATABASE_URL = process.env.DATABASE_URL;
+
+const client = new pg.Client(DATABASE_URL);
+
 app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static('./public'));
 app.set('view engine', 'ejs');
@@ -19,7 +23,12 @@ const PORT = process.env.PORT;
 app.get('/', indexRender);
 
 function indexRender(req, res) {
-    res.render('pages/index');
+    client.query(`SELECT author, title, image_url FROM books`).then(data=>{
+       
+        res.render('pages/index',{savedBook:data});
+    })
+    
+
 };
 
 app.get('/form', formRender);
@@ -32,23 +41,25 @@ function formRender(req, res) {
 
 
 
+let regex=/^(https).*/g;
 function Book(item) {
-    if(item.title){
-        
+  if(item.title){
     this.title = item.title;
-    }else{this.title = 'Not found'};
-
-    if(item.imageLinks.thumbnail){
-        this.image = item.imageLinks.thumbnail
-    }else{this.image = `https://i.imgur.com/J5LVHEL.jpg`};
-    
-    if(item.authors){
-        this.authors = item.authors;
-    }else{this.authors = 'Not found' }
-    if(item.description){
-        this.description = item.description;
-    }else{this.description ='Not found' }
-   
+  }else{this.title = 'Not found';}
+  if(item.imageLinks.thumbnail){
+    if(regex.test(item.imageLinks.thumbnail)){
+      this.image = item.imageLinks.thumbnail;
+    }else{
+      this.image = item.imageLinks.thumbnail.replace('http', 'https');
+    }
+  }else{this.image = `https://i.imgur.com/J5LVHEL.jpg`;}
+  if(item.authors){
+    this.authors = item.authors;
+  }else{this.authors = 'Not found'; }
+  if(item.description){
+    this.description = item.description;
+  }else{this.description ='Not found'; }
+  this.isbn = item.industryIdentifiers.type + ' ' + item.industryIdentifiers.identifier;
 }
 
 function searchFunction(req, res) {
@@ -69,6 +80,10 @@ function handelError(req,res){
     };
 
 // server starting function
-app.listen(PORT, () => {
-    console.log('app is listning on port' + PORT);
+client.connect().then(() => {
+    app.listen(PORT, () => {
+        console.log('app is listning on port' + PORT);
+    });
+}).catch(err => {
+    console.log('Sorry there is an error' + err);
 });
