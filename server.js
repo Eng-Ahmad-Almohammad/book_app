@@ -21,16 +21,45 @@ app.set('view engine', 'ejs');
 const PORT = process.env.PORT;
 
 app.get('/', indexRender);
-
+app.post('/books', selectBook);
+app.get('/books/:id', detailsButton);
 function indexRender(req, res) {
-    client.query(`SELECT author, title, image_url FROM books`).then(data=>{
+    client.query(`SELECT id, authors, title, image_url FROM books`).then(data=>{
        
         res.render('pages/index',{savedBook:data});
     })
     
 
 };
+function detailsButton(req,res){
+    let id = req.params.id;
+    client.query(`SELECT * FROM books WHERE id = ${id}`).then(data=>{
+        console.log(data.rows);
+        res.render('pages/books/show' , {bookDetails:data.rows})
+    })
+};
+function selectBook(req,res){
+   let image_url = req.body.image;
+   let title = req.body.title.replace('\'', '');
+   let authors = req.body.authors.replace('\'', '');
+   let description = req.body.description.replace('\'', '');
+   let isbn = req.body.isbn;
+   let bookshelf = req.body.bookshelf;
+   let arr = [{image_url,title,authors,description,isbn,bookshelf}];
+  
+   insertToDatabase(arr[0])
+    res.render('pages/books/show' , {bookDetails:arr});
 
+   
+}
+function insertToDatabase(obj){
+    
+let SQL = `INSERT INTO books(authors,title,isbn,image_url,description,bookshelf) VALUES ($1, $2,$3,$4,$5,$6);`;
+   let value = [obj.authors,obj.title,obj.isbn,obj.image_url,obj.description,obj.bookshelf];
+   client.query(SQL,value);
+
+
+}
 app.get('/form', formRender);
 app.post('/searches', searchFunction);
 app.get('/*',handelError);
@@ -46,27 +75,38 @@ function Book(item) {
   if(item.title){
     this.title = item.title;
   }else{this.title = 'Not found';}
-  if(item.imageLinks.thumbnail){
+  
+  
+  if(item.imageLinks){
     if(regex.test(item.imageLinks.thumbnail)){
       this.image = item.imageLinks.thumbnail;
     }else{
       this.image = item.imageLinks.thumbnail.replace('http', 'https');
     }
   }else{this.image = `https://i.imgur.com/J5LVHEL.jpg`;}
+  
+  
   if(item.authors){
     this.authors = item.authors;
   }else{this.authors = 'Not found'; }
   if(item.description){
     this.description = item.description;
   }else{this.description ='Not found'; }
-  this.isbn = item.industryIdentifiers.type + ' ' + item.industryIdentifiers.identifier;
+  if(item.industryIdentifiers){
+  this.isbn = item.industryIdentifiers[0].type + ' ' + item.industryIdentifiers[0].identifier;
+  }
+  else{this.isbn = 'Not found';}
+  if(item.categories){
+    this.bookshelf = item.categories[0];
+    }
+    else{this.bookshelf = 'Not found';}
 }
 
 function searchFunction(req, res) {
     
     let q = '';
     if (req.body.search[1] === 'title') { q = `+intitle:${req.body.search[0]}` }
-    if (req.body.search[1] === 'author') { q = `+inauthor:${req.body.search[0]}` }
+    if (req.body.search[1] === 'authors') { q = `+inauthor:${req.body.search[0]}` }
 
     superagent.get(`https://www.googleapis.com/books/v1/volumes?q=${q}`)
     
